@@ -6,3 +6,4 @@ TODO
 * [x] batch 만들기
 * [ ] 상세페이지 수집
 * [ ] gui 만들기
+* [ ] Timeout 문제 해결하기
