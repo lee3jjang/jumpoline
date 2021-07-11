@@ -2,3 +2,6 @@ selenium
 numpy
 pandas
 rich
+xlrd
+xlsxwriter
+openpyxl
