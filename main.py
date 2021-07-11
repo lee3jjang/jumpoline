@@ -123,6 +123,8 @@ def _get_data_by_category(category):
 
 if __name__ == '__main__':
 
+    start_time = time.time()
+
     # get driver
     driver = webdriver.Chrome(executable_path='chromedriver', options=options)
 
@@ -160,4 +162,6 @@ if __name__ == '__main__':
         else:
             logger.info(f"result : {result}")
     executor.shutdown(wait=False)
-    logger.info(f'전체 수집완료')
+
+    end_time = time.time()
+    logger.info(f'전체 수집완료 (총 작업시간 : {end_time-start_time:,.0f}초)')
