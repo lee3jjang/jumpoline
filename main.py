@@ -99,7 +99,9 @@ if __name__ == '__main__':
 
     # access start page of a category
     for category in categories:
-        logger.info(f'Category: {category} 수집시작')
+        logger.info(f'Category {category} 수집시작')
+        # driver = webdriver.Chrome(executable_path='chromedriver', options=options)
+        # driver.get(url)
         driver.execute_script(category)
         time.sleep(5)
 
@@ -109,7 +111,7 @@ if __name__ == '__main__':
         for page in range(page_num):
 
             # access unit page
-            logger.info(f'Page: {page+1} 수집시작')
+            logger.info(f'Page {page+1} 수집시작')
             if page != 0:
                 driver.execute_script(f'Worker.draw_mid_data("{1+page}")')
                 time.sleep(5)
@@ -121,12 +123,12 @@ if __name__ == '__main__':
                 row = _get_data(estate)
                 logger.info(f"ID: {row['id']}, Code: {row['code']} 수집 (Category: {category}, Page: {page+1:>2}/{page_num})")
                 records.append(row)
-                # json.dump(row, records_json, indent=4, ensure_ascii=False) # 임시출력
-                time.sleep(.25)
-            logger.info(f'Page: {page+1} 수집완료')
+                # json.dump(row, records_json, indent=4, ensure_ascii=False)
+                time.sleep(.005) # 속도조절
+            logger.info(f'Page {page+1} 수집완료')
 
         # export data
-        logger.info(f'Category: {category} 수집완료')
+        logger.info(f'Category {category} 수집완료')
         json.dump(records, records_json, indent=4, ensure_ascii=False)
     
     logger.info(f'전체 수집완료')
