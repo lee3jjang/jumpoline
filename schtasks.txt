@@ -1,0 +1,8 @@
+# 생성
+schtasks /create /tn "jumpoline" /tr "C:\Users\HOME-Notebook\workspace\jumpoline\run.bat" /sc hourly /mo 12 /sd 2021/07/12 /st 00:30
+
+# 조회
+schtasks /query /tn "jumpoline" /fo list /v
+
+# 삭제
+schtasks /delete /tn "jumpoline"
