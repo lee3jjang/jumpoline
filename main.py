@@ -22,7 +22,7 @@ os.makedirs('data', exist_ok=True)
 os.makedirs('log', exist_ok=True)
 os.makedirs('result', exist_ok=True)
 
-conn = sqlite3.connect('data/jumpoline.db')
+# conn = sqlite3.connect('data/jumpoline.db')
 
 install()
 report_file = open("log/report.log", "a", encoding='utf8')
@@ -144,8 +144,7 @@ if __name__ == '__main__':
     driver.close()
 
     # make process pool executor
-    num_workers = 2
-    executor = ProcessPoolExecutor(max_workers=num_workers)
+    executor = ProcessPoolExecutor(max_workers=os.cpu_count())
     future_list = []
     for category in categories:
         future = executor.submit(_get_data_by_category, category)
