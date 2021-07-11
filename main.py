@@ -24,6 +24,8 @@ os.makedirs('result', exist_ok=True)
 
 conn = sqlite3.connect('data/jumpoline.db')
 
+records_json = open('result/records.json', 'a', encoding='utf-8')
+    
 install()
 report_file = open("log/report.log", "a", encoding='utf8')
 console_file = Console(file=report_file)
@@ -44,6 +46,7 @@ options.add_argument("disable-gpu")
 
 def _get_data(estate: webdriver.remote.webelement.WebElement) -> List[str]:
     data = {}
+    data['id'] = re.compile(r"\d{6}").search(estate.find_element_by_css_selector('.s_left > .text > h4').get_attribute('onclick')).group()
     data['code'] = estate.find_element_by_css_selector('.s_left > .text > .cate_name > .nocode > strong').get_attribute('innerHTML')
     data['loc'] = estate.find_element_by_css_selector('.s_left > .text > .cate_name > .cate').get_attribute('innerHTML').split('<strong')[0].split(', ')[0]
     data['floor'] = estate.find_element_by_css_selector('.s_left > .text > .cate_name > .cate').get_attribute('innerHTML').split('<strong')[0].split(', ')[1]
@@ -74,43 +77,60 @@ def _get_data(estate: webdriver.remote.webelement.WebElement) -> List[str]:
     return data
 
 if __name__ == '__main__':
+
     # get driver
     driver = webdriver.Chrome(executable_path='chromedriver', options=options)
 
     # access main page
     url = 'https://www.jumpoline.com/_jumpo/jumpoListMaster.asp'
     driver.get(url)
-
-    # access start page
-    category = "CateChgSelect('B', '14', '카페','1')"
-    driver.execute_script(category)
+    logger.info(f'Main Page 접근')
     time.sleep(5)
 
-    logger.info(f'Category: {category} 수집시작')
-    records = []
-    page_num = int(re.sub('[(|)|끝]', '', driver.find_elements_by_css_selector('#dvPaging > .paging > .pageNum > a')[-1].get_attribute('textContent')))
-    # get data from all pages
-    # for page in range(page_num):
-    for page in range(1, page_num):
-        # access unit page
-        logger.info(f'Page: {page+1} 수집시작')
-        if page != 0:
-            driver.execute_script(f'Worker.draw_mid_data("{1+page}")')
-            time.sleep(5)
-        
-        # get data from unit page
-        jplist_many = driver.find_elements_by_class_name('jplist')
-        real_estates = [jplist.find_elements_by_tag_name('li') for jplist in jplist_many]
-        for estate in itertools.chain(*real_estates):
-            row = _get_data(estate)
-            time.sleep(.25)
-            logger.info(f"Code: {row['code']} 수집")
-            records.append(row)
-        logger.info(f'Page: {page+1} 수집완료')
-    
-    df = pd.DataFrame.from_records(records)
+    # get categories
+    categories = []
+    divisions = driver.find_elements_by_css_selector('#Z_return_change_div > div > ul')
+    for div in divisions:
+        suv_divisions = div.find_elements_by_css_selector('li.item_text')
+        for sub_div in suv_divisions:
+            categories.append(sub_div.find_element_by_tag_name('a').get_attribute('onclick').split(';')[0])
+    logger.info(f'Category 목록 수집완료({len(categories)}개)')
+    time.sleep(1)
 
-    df.to_csv('result.csv', index=False)
+    # access start page of a category
+    for category in categories:
+        logger.info(f'Category: {category} 수집시작')
+        driver.execute_script(category)
+        time.sleep(5)
+
+        # get data from all pages
+        records = []
+        page_num = int(re.sub('[(|)|끝]', '', driver.find_elements_by_css_selector('#dvPaging > .paging > .pageNum > a')[-1].get_attribute('textContent')))
+        for page in range(page_num):
+
+            # access unit page
+            logger.info(f'Page: {page+1} 수집시작')
+            if page != 0:
+                driver.execute_script(f'Worker.draw_mid_data("{1+page}")')
+                time.sleep(5)
+            
+            # get data from unit page
+            jplist_many = driver.find_elements_by_class_name('jplist')
+            real_estates = [jplist.find_elements_by_tag_name('li') for jplist in jplist_many]
+            for estate in itertools.chain(*real_estates):
+                row = _get_data(estate)
+                logger.info(f"ID: {row['id']}, Code: {row['code']} 수집 (Category: {category}, Page: {page+1:>2}/{page_num})")
+                records.append(row)
+                # json.dump(row, records_json, indent=4, ensure_ascii=False) # 임시출력
+                time.sleep(.25)
+            logger.info(f'Page: {page+1} 수집완료')
+
+        # export data
+        logger.info(f'Category: {category} 수집완료')
+        json.dump(records, records_json, indent=4, ensure_ascii=False)
     
-    logger.info(f'Category: {category} 수집완료')
-    
+    logger.info(f'전체 수집완료')
+
+    records_json.close()
+    driver.close()
+
